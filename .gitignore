@@ -1,0 +1,6 @@
+data/
+fungi-all/
+models/
+*.h5
+*.keras
+.claude/

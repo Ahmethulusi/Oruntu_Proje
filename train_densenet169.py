@@ -3,6 +3,10 @@ import re
 import math
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")          # ekransiz ortamda PNG kaydetmek icin
+import matplotlib.pyplot as plt
+import seaborn as sns
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, callbacks
@@ -294,10 +298,78 @@ y_true = np.array(y_true)
 y_pred = np.array(y_pred)
 
 from sklearn.metrics import classification_report, confusion_matrix
+
 print("\nClassification Report:")
 print(classification_report(y_true, y_pred, target_names=CLASSES))
+
+cm = confusion_matrix(y_true, y_pred)
 print("Confusion Matrix:")
-print(confusion_matrix(y_true, y_pred))
+print(cm)
+
+# ─────────────────────────────────────────────
+# 10. GRAFİKLER — PNG olarak kaydet
+# ─────────────────────────────────────────────
+
+def save_history_plot(h_ft, h_uf, save_dir):
+    """İki aşamanın history'sini birleştirip loss ve accuracy grafikleri çizer."""
+    acc    = h_ft.history["accuracy"]      + h_uf.history["accuracy"]
+    val_acc= h_ft.history["val_accuracy"]  + h_uf.history["val_accuracy"]
+    loss   = h_ft.history["loss"]          + h_uf.history["loss"]
+    val_loss=h_ft.history["val_loss"]      + h_uf.history["val_loss"]
+    epochs = range(1, len(acc) + 1)
+    boundary = len(h_ft.history["accuracy"])   # frozen / finetuned siniri
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    for ax, train_vals, val_vals, title, ylabel in [
+        (axes[0], acc,  val_acc,  "Accuracy",  "Accuracy"),
+        (axes[1], loss, val_loss, "Loss",      "Loss"),
+    ]:
+        ax.plot(epochs, train_vals, label="Train")
+        ax.plot(epochs, val_vals,   label="Val")
+        ax.axvline(boundary, color="gray", linestyle="--", linewidth=1,
+                   label="Unfreeze")
+        ax.set_title(title)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel(ylabel)
+        ax.legend()
+        ax.grid(alpha=0.3)
+
+    fig.suptitle("DenseNet169 — Egitim Gecmisi", fontsize=13, fontweight="bold")
+    fig.tight_layout()
+    path = os.path.join(save_dir, "training_history.png")
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    print(f"Grafik kaydedildi: {path}")
+
+
+def save_confusion_matrix_plot(cm, classes, save_dir):
+    """Normalized ve ham deger olmak uzere iki confusion matrix yan yana."""
+    cm_norm = cm.astype(float) / cm.sum(axis=1, keepdims=True)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+
+    for ax, data, fmt, title in [
+        (axes[0], cm,      "d",    "Ham Degerler"),
+        (axes[1], cm_norm, ".2f",  "Normalize (satir %)"),
+    ]:
+        sns.heatmap(data, annot=True, fmt=fmt, cmap="Blues",
+                    xticklabels=classes, yticklabels=classes,
+                    linewidths=0.5, ax=ax, cbar=True)
+        ax.set_title(title)
+        ax.set_xlabel("Tahmin")
+        ax.set_ylabel("Gercek")
+
+    fig.suptitle("DenseNet169 — Confusion Matrix", fontsize=13, fontweight="bold")
+    fig.tight_layout()
+    path = os.path.join(save_dir, "confusion_matrix.png")
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    print(f"Grafik kaydedildi: {path}")
+
+
+save_history_plot(history_ft, history_uf, SAVE_DIR)
+save_confusion_matrix_plot(cm, CLASSES, SAVE_DIR)
 
 # Modeli kaydet
 best_model.save(os.path.join(SAVE_DIR, "densenet169_defungi_final.keras"))

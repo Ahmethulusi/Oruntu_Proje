@@ -230,7 +230,7 @@ print("\n=== Test Değerlendirmesi ===")
 
 tf.keras.mixed_precision.set_global_policy("mixed_float16")
 best_model, _ = build_model(trainable_base=False)
-best_model.load_weights(Path.cwd() / "best_model_efficientnetb3.h5", by_name=True, skip_mismatch=True)
+best_model.load_weights(CKPT_FINAL)
 best_model.compile(loss="categorical_crossentropy", metrics=["accuracy"])
 test_loss, test_acc = best_model.evaluate(test_ds, verbose=1)
 print(f"\nTest Loss    : {test_loss:.4f}")
@@ -288,7 +288,7 @@ plot_history(history_frozen, history_finetune)
 if "best_model" not in dir():
     tf.keras.mixed_precision.set_global_policy("mixed_float16")
     best_model, _ = build_model(trainable_base=False)
-    best_model.load_weights(Path.cwd() / "best_model_efficientnetb3.h5", by_name=True, skip_mismatch=True)
+    best_model.load_weights(CKPT_FINAL)
     best_model.compile(loss="categorical_crossentropy", metrics=["accuracy"])
 
 import seaborn as sns
